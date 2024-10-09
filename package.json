@@ -1,0 +1,23 @@
+{
+  "name": "dependencies-analyzer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": "20.18.0",
+    "npm": "10.8.2"
+  },
+  "author": "Nando Ferraz <nandooferraz@gmail.com>",
+  "license": "MIT",
+  "description": "",
+  "type": "module",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "csv-writer": "^1.6.0",
+    "libyear": "^0.8.0",
+    "npm-check": "^6.0.1",
+    "semver": "^7.6.3"
+  }
+}
