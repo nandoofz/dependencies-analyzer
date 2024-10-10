@@ -130,8 +130,9 @@ const formatDecimal = (value) => {
   return 'Unknown';
 };
 
-const formatDependencyResult = (dep, libyearDepResult, npmCheckResult, node16Version, node18Version, node20Version) => {
+const formatDependencyResult = (dep, libyearDepResult, npmCheckResult, node14, node16, node18, node20) => {
   const npmCheckData = npmCheckResult || {};
+  const isNotNodeUpgradeBlocking = node14 === node16 && node16 === node18 && node18 === node20;
 
   return {
     module: dep.module,
@@ -142,10 +143,12 @@ const formatDependencyResult = (dep, libyearDepResult, npmCheckResult, node16Ver
     npmLatest: npmCheckData.latest || 'Unknown',
     npmWanted: npmCheckData.packageWanted || 'Unknown',
     easyUpgrade: npmCheckData.easyUpgrade || false,
-    node16Version,
-    node18Version,
-    node20Version,
     unused: npmCheckData.unused || false,
+    node14,
+    node16,
+    node18,
+    node20,
+    nodeUpgradeBlocking: isNotNodeUpgradeBlocking ? 'FALSE' : 'TRUE',
     drift: formatDecimal(libyearDepResult?.drift),
     pulse: formatDecimal(libyearDepResult?.pulse),
     releases: libyearDepResult?.releases || '0',
@@ -167,10 +170,12 @@ const generateCsv = async (data, rootDirName) => {
       { id: 'npmLatest', title: 'NPM latest version' },
       { id: 'npmWanted', title: 'Wanted version' },
       { id: 'easyUpgrade', title: 'Easy upgrade' },
-      { id: 'node16Version', title: 'Node 16' },
-      { id: 'node18Version', title: 'Node 18' },
-      { id: 'node20Version', title: 'Node 20' },
       { id: 'unused', title: 'Unused' },
+      { id: 'node14', title: 'Node 14' },
+      { id: 'node16', title: 'Node 16' },
+      { id: 'node18', title: 'Node 18' },
+      { id: 'node20', title: 'Node 20' },
+      { id: 'nodeUpgradeBlocking', title: 'Node upgrade blocking' },
       { id: 'drift', title: 'Drift' },
       { id: 'pulse', title: 'Pulse' },
       { id: 'releases', title: 'Releases' },
@@ -189,14 +194,15 @@ const findNodeCompatibility = async (dependency) => {
   const npmData = await fetchNpmPackageInfo(dependency);
 
   if (!npmData || npmData === 'N/A') {
-    return { node16Version: 'N/A', node18Version: 'N/A', node20Version: 'N/A' };
+    return { node14: 'N/A', node16: 'N/A', node18: 'N/A', node20: 'N/A' };
   }
 
-  const node16Version = findLatestCompatibleVersion(npmData, '^16.0.0');
-  const node18Version = findLatestCompatibleVersion(npmData, '^18.0.0');
-  const node20Version = findLatestCompatibleVersion(npmData, '^20.0.0');
+  const node14 = findLatestCompatibleVersion(npmData, '^14.0.0');
+  const node16 = findLatestCompatibleVersion(npmData, '^16.0.0');
+  const node18 = findLatestCompatibleVersion(npmData, '^18.0.0');
+  const node20 = findLatestCompatibleVersion(npmData, '^20.0.0');
 
-  return { node16Version, node18Version, node20Version };
+  return { node14, node16, node18, node20 };
 };
 
 const runNodeCompatibility = async (dependencies) => {
@@ -239,8 +245,8 @@ const runNodeCompatibility = async (dependencies) => {
     for (const dep of dependencies) {
       const libyearDepResult = libyearResults.find(result => result.dependency === dep.dependency);
       const npmCheckDepResult = npmCheckResults.find(result => result.moduleName === dep.dependency);
-      const nodeCompatibilityResult = nodeCompatibilityResults.find(result => result.dependency === dep.dependency);
-      const result = formatDependencyResult(dep, libyearDepResult, npmCheckDepResult, nodeCompatibilityResult.node16Version, nodeCompatibilityResult.node18Version, nodeCompatibilityResult.node20Version);
+      const { node14, node16, node18, node20 } = nodeCompatibilityResults.find(result => result.dependency === dep.dependency);
+      const result = formatDependencyResult(dep, libyearDepResult, npmCheckDepResult, node14, node16, node18, node20);
       csvData.push(result);
     }
     i += 1;
